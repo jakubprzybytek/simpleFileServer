@@ -36,7 +36,7 @@ public class ConcurrentReadUpdateTests {
         this.executor.shutdown();
         this.executor.awaitTermination(5, TimeUnit.SECONDS);
 
-        // remove if not removed yet
+        // remove if failed test did not removed it yet
         delete(this.remoteFileName);
     }
 

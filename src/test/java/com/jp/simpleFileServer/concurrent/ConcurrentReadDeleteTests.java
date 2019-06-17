@@ -36,10 +36,11 @@ public class ConcurrentReadDeleteTests {
         this.executor.shutdown();
         this.executor.awaitTermination(5, TimeUnit.SECONDS);
 
-        // remove if not removed yet
+        // remove if failed test did not removed it yet
         delete(this.remoteFileName);
     }
 
+    // I've just learnt that REST Assured is not fully thread-safe... D'oh!
     @Test
     @DisplayName("Should ensure correct delete behaviour for concurrent requests")
     public void testSingleThreadRoutine() throws InterruptedException, ExecutionException {

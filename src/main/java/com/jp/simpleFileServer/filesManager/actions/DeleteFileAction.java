@@ -1,10 +1,8 @@
 package com.jp.simpleFileServer.filesManager.actions;
 
-import com.jp.simpleFileServer.filesManager.FileLocks;
 import com.jp.simpleFileServer.handlers.ErrorHandlers;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.server.handlers.form.FormParserFactory;
-import org.apache.commons.lang3.StringUtils;
 import org.jboss.logging.Logger;
 
 import java.io.IOException;
@@ -14,7 +12,7 @@ import java.nio.file.Paths;
 
 /**
  * Removes file.
- *
+ * <p>
  * File removed successfully - 200
  * Bad request - 400
  * File not found - 404
@@ -26,38 +24,25 @@ public class DeleteFileAction extends AbstractFileAction {
 
     private final FormParserFactory.Builder builder = FormParserFactory.builder();
 
-    public DeleteFileAction(HttpServerExchange exchange, String filesRoot, FileLocks fileLocks) {
-        super(exchange, filesRoot, fileLocks);
+    public DeleteFileAction(String filesRoot) {
+        super(filesRoot);
     }
 
     @Override
-    public void perform() throws IOException {
-        final String fileName = getFileNameFromRequest();
+    public void perform(HttpServerExchange exchange, String fileName) throws IOException {
         LOGGER.info(String.format("Received request to delete a file: %s", fileName));
 
-        if (StringUtils.isBlank(fileName)) {
-            LOGGER.info(String.format("Bad file name: '%s'", fileName));
-            ErrorHandlers.handleBadRequest(getExchange());
+        Path targetPath = Paths.get(getFilesRoot(), fileName);
+
+        if (!Files.exists(targetPath)) {
+            LOGGER.info(String.format("File not found: '%s'", fileName));
+            ErrorHandlers.handleFileNotFound(exchange);
             return;
         }
 
-        try {
-            acquireWriteLock(fileName);
+        Files.delete(targetPath);
 
-            Path targetPath = Paths.get(getFilesRoot(), fileName);
-
-            if (!Files.exists(targetPath)) {
-                LOGGER.info(String.format("File not found: '%s'", fileName));
-                ErrorHandlers.handleFileNotFound(getExchange());
-                return;
-            }
-
-            Files.delete(targetPath);
-
-            LOGGER.info(String.format("File deleted: %s", fileName));
-            getExchange().setStatusCode(200);
-        } finally {
-            releaseWriteLock(fileName);
-        }
+        LOGGER.info(String.format("File deleted: %s", fileName));
+        exchange.setStatusCode(200);
     }
 }
